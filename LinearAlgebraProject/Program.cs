@@ -13,8 +13,6 @@ Matrix4x4 perspectiveMatrix = GetPerspectiveMatrix(aspectRatio: aspectRatio,
                                                    fov: fov, 
                                                    nearClippingDistance: nearClippingDistance, 
                                                    farClippingDistance: farClippingDistance);
-perspectiveMatrix = RotateMatrixAboutYAxis(perspectiveMatrix, 135, degrees: true);
-
 List<Vector3> vertices = new()
 {
     /* 2x2 Cube sitting at origin BLL(0,0,0), BTL(0,0,2), BLR(0,2,0), BTR(0,2,2)
@@ -121,6 +119,7 @@ Vector3 Vector4To3(Vector4 inputVector, float scalar = 1)
     return new Vector3(inputVector.X * scalar, inputVector.Y * scalar, inputVector.Z * scalar);
 }
 
+// Converts a list of screen space vectors and converts them into pixel coordinates, discarding ones too large/small
 List<Tuple<int, int>> GetScreenCoordinates(List<Vector3> inputVectors, int viewportWidth, int viewportHeight)
 {
     Dictionary<Tuple<int, int>, float> screenCoordinates = new();
@@ -144,20 +143,56 @@ List<Tuple<int, int>> GetScreenCoordinates(List<Vector3> inputVectors, int viewp
 
 
 // EXTRA FUN FUNCTIONS
-// This is scuffed invesitgate a proper answer ???
-Matrix4x4 RotateMatrixAboutYAxis(Matrix4x4 rotationMatrix, float angle, bool degrees = false)
+
+/// Rotates a list of vectors around the given axis by the given amount (in degrees or radians, if marked).
+List<Vector3> RotateVectorsAboutAxis(List<Vector3> vectors, Axis axis, float degrees, bool usingRadians = false)
 {
-    angle *= degrees ? float.Pi / 180 : 1;
-
-    Matrix4x4 appliedRotation = new()
+    List<Vector3> retVector = new();
+    // Rotate each vector
+    foreach (Vector3 vector in vectors)
     {
-        M11 = MathF.Cos(angle),
-        M13 = MathF.Sin(angle),
-        M22 = 1,
-        M31 = -MathF.Sin(angle),
-        M33 = MathF.Cos(angle),
-        M44 = 1
-    };
+        // Store the rotated vector
+        retVector.Add(RotateVectorAboutAxis(vector, axis, degrees, usingRadians));
+    }
 
-    return rotationMatrix * appliedRotation;
+    return retVector;
+}
+
+/// Rotates a vector around the given axis by the given amount (in degrees or radians, if marked).
+Vector3 RotateVectorAboutAxis(Vector3 vector, Axis axis, float degrees, bool usingRadians = false)
+{
+    // Converts degrees to radians
+    if (!usingRadians)
+        degrees *= MathF.PI / 180;
+
+    // Branches to which axis is selected
+    switch (axis)
+    {
+        case Axis.X: // Rotate about X-axis
+            // X remains untouched
+            vector.Y = vector.Y * MathF.Cos(degrees) - vector.Z * MathF.Sin(degrees);
+            vector.Z = vector.Y * MathF.Sin(degrees) + vector.Z * MathF.Cos(degrees);
+            break;
+
+        case Axis.Y: // Rotate about Y-axis
+            vector.X = vector.X * MathF.Cos(degrees) + vector.Z * MathF.Sin(degrees);
+            // Y remains untouched
+            vector.Z = -vector.X * MathF.Sin(degrees) + vector.Z * MathF.Cos(degrees);
+            break;
+
+        case Axis.Z: // Rotate about Z-axis
+            vector.X = vector.X * MathF.Cos(degrees) - vector.Y * MathF.Sin(degrees);
+            vector.Y = vector.X * MathF.Sin(degrees) - vector.Y * MathF.Cos(degrees);
+            // Z remains untouched
+            break;
+    }
+    return vector;
+}
+
+public enum Axis
+{
+    X,  
+    Y,
+    Z,
+
 }
