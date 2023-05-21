@@ -79,3 +79,4 @@ namespace LinearAlgebraProject
         public static abstract float[,] Vector3ListToArray(List<Vector3> inputVectors);
     }
 }
+ 
