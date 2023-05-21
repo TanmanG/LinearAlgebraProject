@@ -4,7 +4,6 @@ using System.Drawing;
 using LinearAlgebraProject;
 using OpenTK;
 using System.Runtime.CompilerServices;
-using OpenTK.Mathematics;
 
 
 
