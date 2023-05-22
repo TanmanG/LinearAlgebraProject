@@ -16,9 +16,19 @@ namespace LinearAlgebraProject
 
         Matrix4x4 perspectiveMatrix;
         List<Vector3> vertexPositions;
+        Vector2 lastPos = Vector2.Zero;
 
         Vector3 cameraPosition; // World coordinates of Camera Angle
-        Vector3 cameraFront;
+        Vector3 CameraFront
+        {
+            get {
+                return Vector3.Normalize(new(x: MathF.Cos(_yaw),
+                           y: MathF.Sin(_pitch),
+                           z: MathF.Sin(_yaw)));  
+                }
+        }
+        float _yaw; // Left/Right
+        float _pitch; // Up/Down
         Vector3 cameraUp;
 
 
@@ -35,10 +45,10 @@ namespace LinearAlgebraProject
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
             // Perspective Matrix Parameters
-            float FOV = 90;
-            float ASPECT_RATIO =  1;
+            float FOV = 60;
+            float ASPECT_RATIO =  Size.X / Size.Y;
             float NEAR_CLIPPING_DISTANCE = 1;
-            float FAR_CLIPPING_DISTANCE = 100f;
+            float FAR_CLIPPING_DISTANCE = 10;
 
             // Create the perspective matrix
             perspectiveMatrix = VertexRenderer.GetPerspectiveMatrix(aspectRatio: ASPECT_RATIO,
@@ -118,9 +128,12 @@ namespace LinearAlgebraProject
                 new(2,0,-5), //BBR
             };
 
-            cameraFront = new(0, 0, -1);
             cameraPosition = new(0, 0, 0);
             cameraUp = new(0, 1, 0);
+            _pitch = 0;
+            _yaw = -MathF.PI / 2;
+
+            CursorState = CursorState.Grabbed;
 
             // Create a new buffer and bind it
             VertexBufferObject = GL.GenBuffer();
@@ -152,7 +165,7 @@ namespace LinearAlgebraProject
             vertices = VertexRenderer.ComputeVertexNDCs(vertices: vertexPositions,
                                                         perspectiveMatrix: perspectiveMatrix,
                                                         position: cameraPosition,
-                                                        front: cameraFront,
+                                                        front: CameraFront,
                                                         up: cameraUp);
             
             // Push the vertices to the openGL buffer
@@ -183,34 +196,75 @@ namespace LinearAlgebraProject
             KeyboardState input = KeyboardState;
 
             float movespeedModifier = 1f * (float)args.Time;
+            float lookspeedModifier = MathF.PI / 180 * (float)args.Time;
+
             if (input.IsKeyDown(Keys.LeftControl))
             {
                 movespeedModifier *= 2;
             }
 
+            if (input.IsKeyDown(Keys.Right))
+            {
+                _yaw += 45 * lookspeedModifier;
+            }
+            if (input.IsKeyDown(Keys.Left))
+            {
+                _yaw += -45 * lookspeedModifier;
+            }
+            
+            
+            if (input.IsKeyDown(Keys.Up))
+            {
+                float appliedLook = MathF.Sin(_pitch) + 45 * lookspeedModifier;
+                if (appliedLook > 1)
+                {
+                    appliedLook = 1;
+                }
+                _pitch = MathF.Asin(appliedLook);
+            }
+            if (input.IsKeyDown(Keys.Down))
+            {
+                float appliedLook = MathF.Sin(_pitch) - 45 * lookspeedModifier;
+                if (appliedLook < -1)
+                {
+                    appliedLook = -1;
+                }
+                _pitch = MathF.Asin(appliedLook);
+            }
+
+            if (_pitch > MathF.PI / 2)
+            {
+                _pitch = MathF.PI / 2;
+            }
+            else if (_pitch < -MathF.PI / 2)
+            {
+                _pitch = -MathF.PI / 2;
+            }
+
+
             if (input.IsKeyDown(Keys.D))
             {
-                cameraPosition += new Vector3(1 * movespeedModifier, 0, 0);
+                cameraPosition += Vector3.Cross(CameraFront, cameraUp) * movespeedModifier;
             }
             if (input.IsKeyDown(Keys.A))
             {
-                cameraPosition += new Vector3(-1 * movespeedModifier, 0, 0);
+                cameraPosition += Vector3.Cross(cameraUp, CameraFront) * movespeedModifier;
             }
             if (input.IsKeyDown(Keys.Space))
             {
-                cameraPosition += new Vector3(0, 1 * movespeedModifier, 0);
+                cameraPosition += cameraUp * movespeedModifier;
             }
             if (input.IsKeyDown(Keys.LeftShift))
             {
-                cameraPosition += new Vector3(0, -1 * movespeedModifier, 0);
+                cameraPosition += -cameraUp * movespeedModifier;
             }
             if (input.IsKeyDown(Keys.W))
             {
-                cameraPosition += new Vector3(0, 0, -1 * movespeedModifier);
+                cameraPosition += CameraFront * movespeedModifier;
             }
             if (input.IsKeyDown(Keys.S))
             {
-                cameraPosition += new Vector3(0, 0, 1 * movespeedModifier);
+                cameraPosition += -CameraFront * movespeedModifier;
             }
 
 
@@ -239,6 +293,18 @@ namespace LinearAlgebraProject
             GL.DeleteVertexArray(VertexArrayObject);
 
             GL.DeleteProgram(shader.Handle);
+        }
+
+
+        public static float MOD(float a, float b)
+        {
+            float i, j, k;
+
+            i = a / b;
+            j = i * b;
+            k = a - j;
+
+            return k;
         }
     }
 }
