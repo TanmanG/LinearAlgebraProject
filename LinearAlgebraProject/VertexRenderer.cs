@@ -24,9 +24,9 @@ internal class VertexRenderer : IVertexRenderer
     }
 
     // PERSPECTIVE RENDERING
-    public static float[,] ComputeVertexNDCs(List<Vector3> vertices, Matrix4x4 perspectiveMatrix, Vector3 position, Vector3 front, Vector3 up)
+    public static float[,] ComputeVertexNDCs(List<Vector3> vertices, Matrix4x4 perspectiveMatrix, Vector3 position, Vector3 front, Vector3 right)
     {
-        Vector3 right = Vector3.Cross(front, up);
+        Vector3 up = Vector3.Cross(front, right);
         perspectiveMatrix *= new Matrix4x4()
         {
             M11 = right.X,

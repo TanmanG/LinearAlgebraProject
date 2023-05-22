@@ -29,7 +29,16 @@ namespace LinearAlgebraProject
         }
         float _yaw; // Left/Right
         float _pitch; // Up/Down
-        Vector3 cameraUp;
+        Vector3 CameraUp
+        {
+            get { return Vector3.Normalize(Vector3.Cross(CameraRight, CameraFront)); }
+        }
+        Vector3 CameraRight
+        {
+            get { return Vector3.Normalize(new(x: MathF.Cos(_yaw + MathF.PI / 2), 
+                                              y: 0, 
+                                              z: MathF.Sin(_yaw + MathF.PI / 2))); }
+        }
 
 
         public Game(int width, int height, string title) : base(GameWindowSettings.Default, new NativeWindowSettings() { Size = (width, height), Title = title })
@@ -45,7 +54,7 @@ namespace LinearAlgebraProject
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
             // Perspective Matrix Parameters
-            float FOV = 60;
+            float FOV = 90;
             float ASPECT_RATIO =  Size.X / Size.Y;
             float NEAR_CLIPPING_DISTANCE = 1;
             float FAR_CLIPPING_DISTANCE = 10;
@@ -129,10 +138,9 @@ namespace LinearAlgebraProject
             };
 
             cameraPosition = new(0, 0, 0);
-            cameraUp = new(0, 1, 0);
             _pitch = 0;
             _yaw = -MathF.PI / 2;
-
+            
             CursorState = CursorState.Grabbed;
 
             // Create a new buffer and bind it
@@ -166,7 +174,7 @@ namespace LinearAlgebraProject
                                                         perspectiveMatrix: perspectiveMatrix,
                                                         position: cameraPosition,
                                                         front: CameraFront,
-                                                        up: cameraUp);
+                                                        right: CameraRight);
             
             // Push the vertices to the openGL buffer
             GL.BufferData(target: BufferTarget.ArrayBuffer,
@@ -215,7 +223,7 @@ namespace LinearAlgebraProject
             
             if (input.IsKeyDown(Keys.Up))
             {
-                float appliedLook = MathF.Sin(_pitch) + 45 * lookspeedModifier;
+                float appliedLook = MathF.Sin(_pitch) - 45 * lookspeedModifier;
                 if (appliedLook > 1)
                 {
                     appliedLook = 1;
@@ -224,7 +232,7 @@ namespace LinearAlgebraProject
             }
             if (input.IsKeyDown(Keys.Down))
             {
-                float appliedLook = MathF.Sin(_pitch) - 45 * lookspeedModifier;
+                float appliedLook = MathF.Sin(_pitch) + 45 * lookspeedModifier;
                 if (appliedLook < -1)
                 {
                     appliedLook = -1;
@@ -244,19 +252,19 @@ namespace LinearAlgebraProject
 
             if (input.IsKeyDown(Keys.D))
             {
-                cameraPosition += Vector3.Cross(CameraFront, cameraUp) * movespeedModifier;
+                cameraPosition += CameraRight * movespeedModifier;
             }
             if (input.IsKeyDown(Keys.A))
             {
-                cameraPosition += Vector3.Cross(cameraUp, CameraFront) * movespeedModifier;
+                cameraPosition += -CameraRight * movespeedModifier;
             }
             if (input.IsKeyDown(Keys.Space))
             {
-                cameraPosition += cameraUp * movespeedModifier;
+                cameraPosition += -CameraUp * movespeedModifier;
             }
             if (input.IsKeyDown(Keys.LeftShift))
             {
-                cameraPosition += -cameraUp * movespeedModifier;
+                cameraPosition += CameraUp * movespeedModifier;
             }
             if (input.IsKeyDown(Keys.W))
             {
@@ -266,6 +274,9 @@ namespace LinearAlgebraProject
             {
                 cameraPosition += -CameraFront * movespeedModifier;
             }
+
+            // Update the directional vectors
+            
 
 
             if (input.IsKeyDown(Keys.Escape))
