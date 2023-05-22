@@ -223,20 +223,18 @@ namespace LinearAlgebraProject
             
             if (input.IsKeyDown(Keys.Up))
             {
-                float appliedLook = MathF.Sin(_pitch) - 45 * lookspeedModifier;
-                if (appliedLook > 1)
-                {
-                    appliedLook = 1;
-                }
+                float appliedLook = Math.Clamp(value: MathF.Sin(_pitch) - 45 * lookspeedModifier,
+                                               min: -1,
+                                               max: 1);
+                
                 _pitch = MathF.Asin(appliedLook);
             }
             if (input.IsKeyDown(Keys.Down))
             {
-                float appliedLook = MathF.Sin(_pitch) + 45 * lookspeedModifier;
-                if (appliedLook < -1)
-                {
-                    appliedLook = -1;
-                }
+                float appliedLook = Math.Clamp(value: MathF.Sin(_pitch) + 45 * lookspeedModifier,
+                                               min: -1,
+                                               max: 1);
+                
                 _pitch = MathF.Asin(appliedLook);
             }
 
@@ -247,6 +245,10 @@ namespace LinearAlgebraProject
             else if (_pitch < -MathF.PI / 2)
             {
                 _pitch = -MathF.PI / 2;
+            }
+            else if (float.IsNaN(_pitch))
+            {
+                _pitch = 0;
             }
 
 
@@ -275,10 +277,6 @@ namespace LinearAlgebraProject
                 cameraPosition += -CameraFront * movespeedModifier;
             }
 
-            // Update the directional vectors
-            
-
-
             if (input.IsKeyDown(Keys.Escape))
             {
                 Close();
@@ -304,18 +302,6 @@ namespace LinearAlgebraProject
             GL.DeleteVertexArray(VertexArrayObject);
 
             GL.DeleteProgram(shader.Handle);
-        }
-
-
-        public static float MOD(float a, float b)
-        {
-            float i, j, k;
-
-            i = a / b;
-            j = i * b;
-            k = a - j;
-
-            return k;
         }
     }
 }
