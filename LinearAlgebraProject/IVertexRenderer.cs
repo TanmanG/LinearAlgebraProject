@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Numerics;
 
 namespace LinearAlgebraProject
 {
@@ -15,7 +10,7 @@ namespace LinearAlgebraProject
         /// <param name="vertices">The world coordinates of the vertices.s</param>
         /// <param name="perspectiveMatrix">The perspective matrix to be used.</param>
         /// <returns>A 2D array with 3 columns for each NDC coordinate, with a vertex's coordinates on each row.</returns>
-        public static abstract float[,] ComputeVertexNDCs(List<Vector3> vertices, Matrix4x4 perspectiveMatrix);
+        public static abstract float[,] ComputeVertexNDCs(List<Vector3> vertices, Matrix4x4 perspectiveMatrix, Vector3 cameraPosition, Vector3 lookDirection, Vector3 cameraUp);
         /// <summary>
         /// Converts inputVectors into a list of homogenized vectors (perspective-divided), using given perspective matrix.
         /// </summary>

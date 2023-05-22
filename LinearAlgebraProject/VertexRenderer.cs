@@ -1,9 +1,5 @@
 ﻿using System.Numerics;
-using System.Runtime.InteropServices;
-using System.Drawing;
 using LinearAlgebraProject;
-using OpenTK;
-using System.Runtime.CompilerServices;
 
 
 
@@ -28,10 +24,32 @@ internal class VertexRenderer : IVertexRenderer
     }
 
     // PERSPECTIVE RENDERING
-    //
-    public static float[,] ComputeVertexNDCs(List<Vector3> vertices,Matrix4x4 perspectiveMatrix)
+    public static float[,] ComputeVertexNDCs(List<Vector3> vertices, Matrix4x4 perspectiveMatrix, Vector3 position, Vector3 front, Vector3 up)
     {
-        List<Vector3> processedVectors = GetNdcCoordinates(GetHomogenizedVectors(vertices, perspectiveMatrix));
+        Vector3 right = Vector3.Cross(front, up);
+        perspectiveMatrix *= new Matrix4x4()
+        {
+            M11 = right.X,
+            M12 = right.Y,
+            M13 = right.Z,
+            M14 = -Vector3.Dot(right, position),
+            M21 = up.X,
+            M22 = up.Y,
+            M23 = up.Z,
+            M24 = -Vector3.Dot(up, position),
+            M31 = -front.X,
+            M32 = -front.Y,
+            M33 = -front.Z,
+            M34 = Vector3.Dot(front, position),
+            M41 = 0,
+            M42 = 0,
+            M43 = 0,
+            M44 = 1,
+        };
+        List<Vector3> processedVectors = GetNdcCoordinates(
+                                            GetHomogenizedVectors(
+                                                inputVectors: vertices,
+                                                perspectiveMatrix: perspectiveMatrix));
 
         return Vector3ListToArray(processedVectors);
     }
@@ -39,6 +57,8 @@ internal class VertexRenderer : IVertexRenderer
                                                float nearClippingDistance,
                                                float farClippingDistance)
     {
+        fov *= MathF.PI / 180;
+
         if (nearClippingDistance <= 0)
             throw new Exception("Near clipping distance must be non-zero and positive!");
         if (farClippingDistance <= 0)
@@ -51,9 +71,9 @@ internal class VertexRenderer : IVertexRenderer
         Matrix4x4 perspectiveMatrix = new()
         {
             M11 = 1 / (aspectRatio * MathF.Tan(fov / 2)),
-            M22 = 1 / (aspectRatio * MathF.Tan(fov / 2)),
-            M33 = -(nearClippingDistance + farClippingDistance) / (nearClippingDistance - farClippingDistance),
-            M34 = -2 * nearClippingDistance * farClippingDistance / (nearClippingDistance - farClippingDistance),
+            M22 = 1 / MathF.Tan(fov / 2),
+            M33 = -(farClippingDistance + nearClippingDistance) / (farClippingDistance - nearClippingDistance),
+            M34 = -2 * nearClippingDistance * farClippingDistance / (farClippingDistance - nearClippingDistance),
             M43 = -1,
         };
 
@@ -65,13 +85,16 @@ internal class VertexRenderer : IVertexRenderer
 
         foreach (Vector3 vector in inputVectors)
         {
+            homogenizedVectors.Add(MultiplyVecMatrix4(vector: new Vector4(vector, 1), matrix: perspectiveMatrix));
+            /*
             homogenizedVectors.Add(new()
             {
                 X = vector.X * perspectiveMatrix.M11,
                 Y = vector.Y * perspectiveMatrix.M22,
-                Z = vector.Z * perspectiveMatrix.M33 + perspectiveMatrix.M34,
+                Z = vector.Z * perspectiveMatrix.M33 + perspectiveMatrix.M34 * 1,
                 W = vector.Z * perspectiveMatrix.M43,
             });
+            */
         }
 
         return homogenizedVectors;
@@ -113,13 +136,13 @@ internal class VertexRenderer : IVertexRenderer
     //
     public static Vector3 Vector4To3(Vector4 inputVector, float scalar = 1)
     {
-        return new Vector3(inputVector.X * scalar, inputVector.Y * scalar, inputVector.Z * scalar);
+        return new Vector3(x: inputVector.X * scalar, y: inputVector.Y * scalar, z: inputVector.Z * scalar);
     }
     public static float[,] Vector3ListToArray(List<Vector3> inputVectors)
     {
         float[,] vectorArray = new float[inputVectors.Count, 3];
 
-        for (int row = 0; row < inputVectors.Count - 1; row++)
+        for (int row = 0; row < inputVectors.Count; row++)
         {
             vectorArray[row, 0] = inputVectors[row].X;
             vectorArray[row, 1] = inputVectors[row].Y;
@@ -130,7 +153,29 @@ internal class VertexRenderer : IVertexRenderer
     }
 
     // OPERATION FUNCTIONS
-    //
+    public static List<Vector4> ApplyCameraRotationAndPosition(List<Vector3> inputVectors, Vector3 position, Vector3 front, Vector3 up)
+    {
+        List<Vector4> rotatedVectors = new();
+
+        Matrix4x4 viewMatrix = Matrix4x4.CreateLookAt(cameraPosition: position, cameraTarget: position + front, cameraUpVector: up);
+
+        foreach (Vector3 vector in inputVectors)
+        {
+            rotatedVectors.Add(MultiplyVecMatrix4(new Vector4(vector, w: 1), matrix: viewMatrix));
+        }
+
+        return rotatedVectors;
+    }
+    public static Vector4 MultiplyVecMatrix4(Vector4 vector, Matrix4x4 matrix)
+    {
+        return new()
+        {
+            X = vector.X * matrix.M11 + vector.Y * matrix.M12 + vector.Z * matrix.M13 + vector.W * matrix.M14,
+            Y = vector.X * matrix.M21 + vector.Y * matrix.M22 + vector.Z * matrix.M23 + vector.W * matrix.M24,
+            Z = vector.X * matrix.M31 + vector.Y * matrix.M32 + vector.Z * matrix.M33 + vector.W * matrix.M34,
+            W = vector.X * matrix.M41 + vector.Y * matrix.M42 + vector.Z * matrix.M43 + vector.W * matrix.M44,
+        };
+    }
     public static List<Vector3> RotateVectorsAboutAxis(List<Vector3> vectors, Axis axis, float degrees, bool usingRadians = false)
     {
         List<Vector3> retVector = new();
