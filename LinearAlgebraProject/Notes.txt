@@ -1,13 +1,1 @@
-﻿Brandon's Notes
 
-Three different types most commonly used
-	int - integer
-	float - decimal
-	bool - true/false
-
-Red - reserved for something else
-Dark blue - Reserved commands
-Green - Can be used, good 
-Orange - Description usually used with quotation marks
-
-Squiggly lines means something isn't correct
