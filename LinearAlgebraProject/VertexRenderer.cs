@@ -86,15 +86,6 @@ internal class VertexRenderer : IVertexRenderer
         foreach (Vector3 vector in inputVectors)
         {
             homogenizedVectors.Add(MultiplyVecMatrix4(vector: new Vector4(vector, 1), matrix: perspectiveMatrix));
-            /*
-            homogenizedVectors.Add(new()
-            {
-                X = vector.X * perspectiveMatrix.M11,
-                Y = vector.Y * perspectiveMatrix.M22,
-                Z = vector.Z * perspectiveMatrix.M33 + perspectiveMatrix.M34 * 1,
-                W = vector.Z * perspectiveMatrix.M43,
-            });
-            */
         }
 
         return homogenizedVectors;
@@ -198,7 +189,7 @@ internal class VertexRenderer : IVertexRenderer
         switch (axis)
         {
             case Axis.X: // Rotate about X-axis
-                         // X remains untouched
+                // X remains untouched
                 vector.Y = vector.Y * MathF.Cos(degrees) - vector.Z * MathF.Sin(degrees);
                 vector.Z = vector.Y * MathF.Sin(degrees) + vector.Z * MathF.Cos(degrees);
                 break;
